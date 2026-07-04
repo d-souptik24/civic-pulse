@@ -52,7 +52,7 @@ Every issue has a full public lifecycle. The community sees it, upvotes it, and 
 3. **Drop a pin** on the map to geo-tag the exact location
 4. **Submit** — the issue appears live on the community map instantly
 5. **Community upvotes** raise the priority of important issues
-6. **Admins resolve** by uploading a fix photo — AI verifies the fix is real before closing
+6. **Citizens resolve** by uploading a fix photo — AI verifies the fix is real before closing
 
 ---
 
