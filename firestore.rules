@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Issues: Anyone can read, but all writes must go through the Admin SDK backend
+    match /issues/{issueId} {
+      allow read: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+    
+    // Insights: Anyone can read. Only the backend writes these (Admin SDK bypasses rules).
+    match /insights/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    
+    // Users: Anyone can read (for the leaderboard), but only the user themselves can write.
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null 
+                    && request.auth.uid == userId
+                    && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['points', 'badges', 'reportsCount', 'issuesResolved', 'upvotesGiven', 'lastBadgeAwardedAt']));
+    }
+  }
+}

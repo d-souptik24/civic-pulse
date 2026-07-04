@@ -1,0 +1,35 @@
+# ── Secrets ──────────────────────────────
+.env
+server/.env
+# (client/.env is explicitly ALLOWED so Vite can inline VITE_ variables during build)
+env.yaml
+*-firebase-adminsdk-*.json
+
+# ── Dependencies (reinstalled during docker build) ───────────────────────────
+node_modules
+client/node_modules
+server/node_modules
+
+# ── Source control / IDE ─────────────────────────────────────────────────────
+.git
+.gitignore
+.agents/
+graphify-out/
+.vscode/
+.idea/
+
+# ── Documentation ────────────────────────────────────
+plan/
+walkthrough/
+guidelines/
+docs/
+README.md
+
+# ── Build artifacts (rebuilt during docker build) ────────────────────────────
+client/dist
+server/public
+
+# ── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log

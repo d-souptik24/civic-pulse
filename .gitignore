@@ -1,0 +1,41 @@
+# ── Secrets — NEVER commit these ─────────────────────────────────────────────
+server/.env
+client/.env
+.env
+env.yaml
+Dockerfile
+# Firebase service account key ─────────────────────────────────────────────
+*-firebase-adminsdk-*.json
+*service-account*.json
+*credentials*.json
+*.key
+*.pem
+
+# ── Dependencies ─────────────────────────────────────────────────────────────
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# ── Build output ─────────────────────────────────────────────────────────────
+client/dist/
+server/public/
+
+# ── Documentation ────────────────────────
+guidelines/
+plan/
+walkthrough/
+docs/
+
+# ── IDE / Editor ─────────────────────────────────────────────────────────────
+.agents/
+graphify-out/
+.vscode/
+.idea/
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+
+# ── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db

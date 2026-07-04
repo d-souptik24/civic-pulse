@@ -1,0 +1,29 @@
+.gcloudignore
+.git
+.gitignore
+
+# Secrets
+.env
+env.yaml
+server/.env
+client/.env
+*-firebase-adminsdk-*.json
+
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Build Output
+client/dist/
+server/public/
+
+# IDE / Docs
+.agents/
+graphify-out/
+.vscode/
+.idea/
+plan/
+walkthrough/
+docs/
+guidelines/

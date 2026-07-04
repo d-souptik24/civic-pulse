@@ -1,0 +1,100 @@
+/* Inter font — loaded before Tailwind so it's available via font-sans */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* Tailwind CSS v4 — single import, processed by @tailwindcss/vite plugin */
+@import "tailwindcss";
+
+/* ── Force dark mode globally via HTML attribute ─────────────────────────── */
+/* In Tailwind v4, dark mode variant is triggered by `class` on <html>.      */
+/* We set it directly in JS (see main.jsx) rather than @apply dark here.     */
+
+/* ── Custom base overrides ───────────────────────────────────────────────── */
+@layer base {
+  body {
+    background-color: #0f172a; /* slate-900 */
+    color: #f1f5f9;            /* slate-100 */
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* ── Custom utilities Tailwind can't express alone ───────────────────────── */
+@layer utilities {
+  /* Glassmorphism card helper — use as class="glass-card" */
+  .glass-card {
+    backdrop-filter: blur(12px);
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 1rem;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.4);
+  }
+
+  /* Smooth fade-in on mount */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Google Maps InfoWindow Overrides */
+  .gm-style-iw-c {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border-radius: 1rem !important;
+  }
+  .gm-style-iw-d {
+    overflow: hidden !important;
+    padding: 0 !important;
+  }
+  .gm-style-iw-tc::after {
+    background: #1e293b !important; /* matches slate-800 arrow color */
+  }
+  .gm-ui-hover-effect {
+    top: 6px !important;
+    right: 6px !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 50% !important;
+  }
+  .gm-ui-hover-effect span {
+    background-color: #cbd5e1 !important; /* slate-300 close icon */
+  }
+
+  /* ── Custom Dark Scrollbars ───────────────────────────────────────────────── */
+  /* Prevents the default chunky white/grey browser scrollbar from breaking the  */
+  /* glassmorphism aesthetic on Windows and macOS (non-overlay scrollbar mode).  */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(148, 163, 184, 0.2); /* slate-400/20 */
+    border-radius: 9999px;
+    transition: background-color 0.2s;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(148, 163, 184, 0.4); /* slate-400/40 */
+  }
+
+  /* ── Hide scrollbar for nav ──────────────────────────────────────────────── */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* ── Focus Ring Utility ───────────────────────────────────────────────────── */
+  /* Accessibility: visible focus ring on all interactive elements.              */
+  .focus-brand:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #00D4AA50;
+  }
+}
