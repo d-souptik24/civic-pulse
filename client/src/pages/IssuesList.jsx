@@ -3,8 +3,8 @@ import { collection, onSnapshot, query, orderBy, limit, where } from 'firebase/f
 import { db } from '../lib/firebase.js';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext.jsx';
-import { STATUS_CONFIG } from '../lib/constants.js';
 import { AlertCircle, CheckCircle, Clock, Filter, ThumbsUp } from 'lucide-react';
+import { STATUS_CONFIG } from '../lib/constants.js';
 
 // ── Status + Category Configuration ───────────────────────────────────────────
 
@@ -29,8 +29,6 @@ const CATEGORY_OPTIONS = [
   { label: 'Other',          value: 'other' },
 ];
 
-// STATUS_CONFIG removed — imported from lib/constants.js
-
 const CATEGORY_EMOJI = {
   pothole:      '🕳️',
   streetlight:  '💡',
@@ -41,6 +39,9 @@ const CATEGORY_EMOJI = {
   encroachment: '🏗️',
   other:        '📍',
 };
+
+// Status styles for light-mode cards
+// STATUS_LIGHT removed — now imported as STATUS_CONFIG from lib/constants.js
 
 function timeAgo(timestamp) {
   if (!timestamp) return 'just now';
@@ -60,7 +61,8 @@ function IssueCard({ issue, onClick }) {
     <button
       id={`issue-card-${issue.id}`}
       onClick={onClick}
-      className="glass-card p-4 text-left w-full group hover:bg-white/10 transition-all duration-200 hover:scale-[1.01] hover:border-white/20 animate-fade-in"
+      className="card-white p-4 text-left w-full group transition-all duration-200 hover:scale-[1.01] hover:border-[var(--color-plum-light)] hover:bg-[#F8F6F4] hover:shadow-md animate-fade-in"
+      style={{ display: 'block' }}
     >
       {/* Photo + Status Row */}
       <div className="flex items-start gap-3 mb-3">
@@ -68,30 +70,39 @@ function IssueCard({ issue, onClick }) {
           <img
             src={issue.photoUrl}
             alt={issue.title}
-            className="w-16 h-16 rounded-xl object-cover border border-white/10 shrink-0"
+            className="w-16 h-16 object-cover shrink-0"
+            style={{ borderRadius: 'var(--radius-image)', border: '1px solid var(--color-stone-line)' }}
           />
         ) : (
-          <div className="w-16 h-16 rounded-xl bg-slate-700/60 border border-white/10 flex items-center justify-center text-2xl shrink-0">
+          <div
+            className="w-16 h-16 flex items-center justify-center text-2xl shrink-0"
+            style={{ borderRadius: 'var(--radius-image)', backgroundColor: 'var(--color-stone-paper)', border: '1px solid var(--color-stone-line)' }}
+          >
             {emoji}
           </div>
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-1">
-            <p className="text-sm font-semibold text-slate-100 leading-tight group-hover:text-[#00D4AA] transition-colors line-clamp-2">
+            <p
+              className="text-sm font-semibold leading-tight line-clamp-2 transition-colors"
+              style={{ color: 'var(--color-ink)' }}
+            >
               {issue.title}
             </p>
-            <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 font-medium capitalize ${cfg.color} ${cfg.bg} border ${cfg.border}`}>
+            <span
+              className={`text-[10px] px-2 py-0.5 shrink-0 font-semibold uppercase tracking-wider rounded-full border ${cfg.color} ${cfg.bg} ${cfg.border}`}
+            >
               {cfg.label}
             </span>
           </div>
           {issue.description && (
-            <p className="text-xs text-slate-500 line-clamp-1">{issue.description}</p>
+            <p className="text-xs line-clamp-1" style={{ color: 'var(--color-fog)' }}>{issue.description}</p>
           )}
         </div>
       </div>
 
       {/* Meta Row */}
-      <div className="flex items-center gap-4 text-xs text-slate-500">
+      <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--color-fog)' }}>
         <span className="flex items-center gap-1">
           <Clock size={10} />
           {timeAgo(issue.reportedAt)}
@@ -101,13 +112,13 @@ function IssueCard({ issue, onClick }) {
           {issue.upvotes ?? 0}
         </span>
         {issue.aiAuthenticity && (
-          <span className="text-[#00D4AA] flex items-center gap-1">
+          <span className="flex items-center gap-1" style={{ color: 'var(--color-signal-green)' }}>
             <CheckCircle size={10} />
             AI Verified
           </span>
         )}
         {issue.severity && (
-          <span className="capitalize">
+          <span className="capitalize" style={{ color: 'var(--color-fog)' }}>
             {emoji} {issue.category?.replace('_', ' ')}
           </span>
         )}
@@ -132,29 +143,18 @@ export default function IssuesList() {
   useEffect(() => {
     setLoading(true);
     let q;
-    
-    // Security check: Only admins can view OTHER people's specific feeds
+
     if (reporterFilter && reporterFilter !== 'me' && reporterFilter !== user?.uid && !isAdmin) {
       navigate('/issues');
       return;
     }
 
     if (reporterFilter && reporterFilter !== 'me' && user) {
-      q = query(
-        collection(db, 'issues'),
-        where('reportedBy', '==', reporterFilter)
-      );
+      q = query(collection(db, 'issues'), where('reportedBy', '==', reporterFilter));
     } else if (reporterFilter === 'me' && user) {
-      q = query(
-        collection(db, 'issues'),
-        where('reportedBy', '==', user.uid)
-      );
+      q = query(collection(db, 'issues'), where('reportedBy', '==', user.uid));
     } else {
-      q = query(
-        collection(db, 'issues'),
-        orderBy('reportedAt', 'desc'),
-        limit(100)
-      );
+      q = query(collection(db, 'issues'), orderBy('reportedAt', 'desc'), limit(100));
     }
 
     const unsub = onSnapshot(q, (snap) => {
@@ -170,59 +170,77 @@ export default function IssuesList() {
       setLoading(false);
     });
     return unsub;
-  }, []);
+  }, [reporterFilter, user, isAdmin, navigate]);
 
-  // Client-side filter (from the in-memory 100-doc slice)
   const filtered = issues.filter((issue) => {
     const statusOk   = statusFilter === 'all' || issue.status === statusFilter;
     const categoryOk = catFilter === 'all'    || issue.category === catFilter;
     return statusOk && categoryOk;
   });
 
+  const selectStyle = {
+    width: '100%',
+    backgroundColor: 'var(--color-stone-white)',
+    border: '1px solid var(--color-stone-line)',
+    color: 'var(--color-ink)',
+    fontSize: '14px',
+    borderRadius: 'var(--radius-control)',
+    padding: '8px 32px 8px 12px',
+    outline: 'none',
+    cursor: 'pointer',
+    appearance: 'none',
+    backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236E6A63' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 8px center',
+    backgroundSize: '16px',
+  };
+
   return (
-    <div className="min-h-screen pt-20 pb-24 md:pb-10 px-4 max-w-6xl mx-auto animate-fade-in">
+    <div
+      className="min-h-screen pt-20 pb-24 md:pb-10 px-4 max-w-6xl mx-auto animate-fade-in"
+      style={{ backgroundColor: 'var(--color-stone-paper)' }}
+    >
       {/* Header */}
       <div className="mb-6 flex items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-100">
-            {reporterFilter === 'me' 
-              ? 'My Reported Issues' 
-              : reporterFilter 
-                ? `${targetName || 'Citizen'}'s Reported Issues` 
+          <h1
+            className="font-bold"
+            style={{ fontSize: 'var(--text-heading)', lineHeight: 'var(--leading-heading)', color: 'var(--color-ink)' }}
+          >
+            {reporterFilter === 'me'
+              ? 'My Reported Issues'
+              : reporterFilter
+                ? `${targetName || 'Citizen'}'s Reported Issues`
                 : 'Issues Directory'}
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            {reporterFilter === 'me' 
-              ? 'All civic issues you have reported' 
-              : reporterFilter 
+          <p className="text-sm mt-1" style={{ color: 'var(--color-fog)' }}>
+            {reporterFilter === 'me'
+              ? 'All civic issues you have reported'
+              : reporterFilter
                 ? 'Admin Audit View — Viewing all issues reported by this citizen'
                 : 'Browse and filter up to the 100 most recent civic reports'}
           </p>
         </div>
-        {reporterFilter && (
-          <button 
-            onClick={() => navigate('/issues')}
-            className="ml-auto px-4 py-2 bg-slate-800 hover:bg-slate-700 text-sm font-medium text-slate-300 rounded-xl transition-colors"
-          >
-            View All
-          </button>
-        )}
       </div>
 
       {/* Filters */}
-      <div className="glass-card p-4 mb-6 flex flex-wrap gap-4 items-center">
-        <Filter size={16} className="text-slate-400 shrink-0" />
+      <div className="card-white p-4 sm:p-5 mb-6 flex flex-col md:flex-row gap-4 items-end">
+        {/* Header / Icon */}
+        <div className="flex items-center gap-2 pb-2.5 self-start md:self-end" style={{ color: 'var(--color-fog)' }}>
+          <Filter size={16} />
+          <span className="text-xs font-semibold uppercase tracking-wider">Filters</span>
+        </div>
 
         {/* Status Filter */}
-        <div className="flex-1 min-w-[160px]">
-          <label className="block text-xs text-slate-500 font-medium mb-1.5 uppercase tracking-wider">
+        <div className="flex-1 w-full min-w-[160px]">
+          <label className="block text-xs font-medium mb-1.5 uppercase tracking-wider" style={{ color: 'var(--color-fog)' }}>
             Status
           </label>
           <select
             id="filter-status"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full bg-slate-800 border border-white/10 text-slate-200 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-[#00D4AA]/50 transition-colors"
+            style={selectStyle}
           >
             {STATUS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -231,15 +249,15 @@ export default function IssuesList() {
         </div>
 
         {/* Category Filter */}
-        <div className="flex-1 min-w-[160px]">
-          <label className="block text-xs text-slate-500 font-medium mb-1.5 uppercase tracking-wider">
+        <div className="flex-1 w-full min-w-[160px]">
+          <label className="block text-xs font-medium mb-1.5 uppercase tracking-wider" style={{ color: 'var(--color-fog)' }}>
             Category
           </label>
           <select
             id="filter-category"
             value={catFilter}
             onChange={(e) => setCatFilter(e.target.value)}
-            className="w-full bg-slate-800 border border-white/10 text-slate-200 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-[#00D4AA]/50 transition-colors"
+            style={selectStyle}
           >
             {CATEGORY_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -248,31 +266,34 @@ export default function IssuesList() {
         </div>
 
         {/* Result Count Badge */}
-        <div className="ml-auto">
-          <span className="text-xs text-slate-500 bg-slate-800 px-3 py-1.5 rounded-full border border-white/10">
+        <div className="ml-auto w-full md:w-auto self-start md:self-end flex pb-1">
+          <span
+            className="text-xs px-3 py-1.5 font-medium w-full md:w-auto text-center"
+            style={{ color: 'var(--color-fog)', backgroundColor: 'var(--color-stone-paper)', borderRadius: 'var(--radius-control)', border: '1px solid var(--color-stone-line)' }}
+          >
             {loading ? '—' : `${filtered.length} issue${filtered.length !== 1 ? 's' : ''}`}
           </span>
         </div>
       </div>
 
-      {/* Loading State — 6 skeleton cards matching IssueCard shape */}
+      {/* Loading State — skeleton cards */}
       {loading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="glass-card p-4 animate-pulse">
+            <div key={i} className="card-white p-4 animate-pulse">
               <div className="flex items-start gap-3 mb-3">
-                <div className="w-16 h-16 rounded-xl bg-white/5 shrink-0" />
+                <div className="w-16 h-16 shrink-0" style={{ borderRadius: 'var(--radius-image)', backgroundColor: 'var(--color-stone-line)' }} />
                 <div className="flex-1 space-y-2">
                   <div className="flex justify-between gap-2">
-                    <div className="h-3.5 bg-white/10 rounded w-3/5" />
-                    <div className="h-4 bg-white/5 rounded-full w-14 shrink-0" />
+                    <div className="h-3.5 rounded w-3/5" style={{ backgroundColor: 'var(--color-stone-line)' }} />
+                    <div className="h-4 rounded-full w-14 shrink-0" style={{ backgroundColor: 'var(--color-stone-paper)' }} />
                   </div>
-                  <div className="h-3 bg-white/5 rounded w-4/5" />
+                  <div className="h-3 rounded w-4/5" style={{ backgroundColor: 'var(--color-stone-paper)' }} />
                 </div>
               </div>
               <div className="flex gap-4">
-                <div className="h-3 bg-white/5 rounded w-16" />
-                <div className="h-3 bg-white/5 rounded w-12" />
+                <div className="h-3 rounded w-16" style={{ backgroundColor: 'var(--color-stone-line)' }} />
+                <div className="h-3 rounded w-12" style={{ backgroundColor: 'var(--color-stone-line)' }} />
               </div>
             </div>
           ))}
@@ -281,10 +302,10 @@ export default function IssuesList() {
 
       {/* Empty State */}
       {!loading && filtered.length === 0 && (
-        <div className="glass-card p-12 text-center">
-          <AlertCircle size={40} className="text-slate-600 mx-auto mb-3" />
-          <p className="text-slate-400 font-medium">No issues match your filters</p>
-          <p className="text-slate-600 text-sm mt-1">Try adjusting the status or category filter above.</p>
+        <div className="card-white p-12 text-center">
+          <AlertCircle size={40} className="mx-auto mb-3" style={{ color: 'var(--color-fog)' }} />
+          <p className="font-medium" style={{ color: 'var(--color-fog)' }}>No issues match your filters</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--color-fog)' }}>Try adjusting the status or category filter above.</p>
         </div>
       )}
 

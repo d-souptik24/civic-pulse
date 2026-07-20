@@ -20,9 +20,9 @@
 export const STATUS_CONFIG = {
   pending:     { label: 'Pending',     color: 'text-slate-400',  bg: 'bg-slate-400/10',  border: 'border-slate-400/30'  },
   unverified:  { label: 'Unverified',  color: 'text-slate-400',  bg: 'bg-slate-400/10',  border: 'border-slate-400/30'  },
-  open:        { label: 'Open',        color: 'text-red-400',    bg: 'bg-red-400/10',    border: 'border-red-400/30'    },
-  in_progress: { label: 'In Progress', color: 'text-amber-400',  bg: 'bg-amber-400/10',  border: 'border-amber-400/30'  },
-  escalated:   { label: 'Escalated',   color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/30' },
+  open:        { label: 'Open',        color: 'text-amber-500',  bg: 'bg-amber-500/10',  border: 'border-amber-500/30'  },
+  in_progress: { label: 'In Progress', color: 'text-blue-500',   bg: 'bg-blue-500/10',   border: 'border-blue-500/30'   },
+  escalated:   { label: 'Escalated',   color: 'text-red-500',    bg: 'bg-red-500/10',    border: 'border-red-500/30'    },
   resolved:    { label: 'Resolved',    color: 'text-green-400',  bg: 'bg-green-400/10',  border: 'border-green-400/30'  },
 };
 
@@ -41,10 +41,10 @@ export const STATUS_BG_CLASS = Object.fromEntries(
 export const STATUS_COLORS_HEX = {
   pending:     '#94a3b8', // slate-400
   unverified:  '#94a3b8', // slate-400
-  open:        '#f87171', // red-400
-  in_progress: '#fbbf24', // amber-400
-  escalated:   '#fb923c', // orange-400
-  resolved:    '#4ade80', // green-400
+  open:        '#f59e0b', // amber-500
+  in_progress: '#3b82f6', // blue-500
+  escalated:   '#ef4444', // red-500
+  resolved:    '#27ae60', // sprout green
 };
 
 // ── 3. VERDICT_COLORS (boolean pipeline verdicts) ─────────────────────────────

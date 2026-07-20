@@ -115,7 +115,7 @@ Write exactly one paragraph outlining why this needs immediate attention. Be for
 
   } catch (error) {
     console.error('Escalation Agent failed:', error);
-    res.status(500).json({ error: 'Failed to run Escalation Agent', details: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Failed to run Escalation Agent' });
   }
 });
 

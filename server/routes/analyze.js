@@ -1,5 +1,6 @@
 import express from 'express';
 import { callGemini, extractJSON, toInlineImage } from '../lib/gemini.js';
+import { signVerdict } from '../lib/token.js';
 import auth from '../middleware/auth.js';
 
 const router = express.Router();
@@ -7,7 +8,7 @@ const router = express.Router();
 // Pipeline 1: Vision Categorizer + Authenticity Verifier (merged)
 // POST /api/analyze
 // Receives: { imageUrl } 
-// Returns: { category, severity, title, description, isAuthentic, confidence, reasoning }
+// Returns: { category, severity, title, description, isAuthentic, confidence, reasoning, verdictToken }
 
 const FALLBACK_DEFAULTS = {
   category: "other",
@@ -19,11 +20,59 @@ const FALLBACK_DEFAULTS = {
   reasoning: null
 };
 
+// ── Per-user abuse counter ───────────────────────────────────────────────────
+// Tracks consecutive rejected (inauthentic) uploads per user.
+// 3 consecutive rejections within the TTL window → HTTP 429 cooldown.
+const abuseMap = new Map(); // uid → { count, firstRejectedAt }
+const ABUSE_MAX_REJECTIONS = 3;
+const ABUSE_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
+const ABUSE_COOLDOWN_MINUTES = 30;
+
+function checkAbuse(uid) {
+  const entry = abuseMap.get(uid);
+  if (!entry) return { blocked: false };
+
+  // Window expired — reset
+  if (Date.now() - entry.firstRejectedAt > ABUSE_WINDOW_MS) {
+    abuseMap.delete(uid);
+    return { blocked: false };
+  }
+
+  if (entry.count >= ABUSE_MAX_REJECTIONS) {
+    return { blocked: true, cooldownMinutes: ABUSE_COOLDOWN_MINUTES };
+  }
+
+  return { blocked: false };
+}
+
+function recordRejection(uid) {
+  const entry = abuseMap.get(uid);
+  if (!entry || Date.now() - entry.firstRejectedAt > ABUSE_WINDOW_MS) {
+    abuseMap.set(uid, { count: 1, firstRejectedAt: Date.now() });
+  } else {
+    entry.count += 1;
+  }
+}
+
+function resetAbuse(uid) {
+  abuseMap.delete(uid);
+}
+
 router.post('/', auth, async (req, res) => {
   const { imageUrl } = req.body;
+  const uid = req.user.uid;
+
+  // Check abuse cooldown before burning a Gemini API call
+  const abuse = checkAbuse(uid);
+  if (abuse.blocked) {
+    return res.status(429).json({
+      error: `Too many rejected uploads. Please wait ${abuse.cooldownMinutes} minutes before trying again.`,
+      cooldownMinutes: abuse.cooldownMinutes
+    });
+  }
   
   if (!imageUrl) {
-    return res.status(200).json(FALLBACK_DEFAULTS);
+    return res.status(200).json({ ...FALLBACK_DEFAULTS, verdictToken: null });
   }
 
   try {
@@ -62,11 +111,11 @@ Do NOT wrap the output in markdown code blocks. Output ONLY raw valid JSON.`;
     const data = extractJSON(textResponse);
     if (!data) {
       console.error('Failed to parse Gemini response as JSON');
-      return res.status(200).json(FALLBACK_DEFAULTS);
+      return res.status(200).json({ ...FALLBACK_DEFAULTS, verdictToken: null });
     }
     
-    // Ensure safety block by filling defaults if missing
-    return res.status(200).json({
+    // 5. Build result and sign verdict token
+    const result = {
       category: data.category || 'other',
       severity: data.severity || 3,
       title: data.title || 'Reported Issue',
@@ -74,7 +123,22 @@ Do NOT wrap the output in markdown code blocks. Output ONLY raw valid JSON.`;
       isAuthentic: data.isAuthentic ?? true,
       confidence: data.confidence || 0.5,
       reasoning: data.reasoning || null
+    };
+
+    // 6. Track abuse if inauthentic, reset on authentic
+    if (!result.isAuthentic) {
+      recordRejection(uid);
+    } else {
+      resetAbuse(uid);
+    }
+
+    // 7. Sign the verdict — client must send this back at POST /api/issues
+    const verdictToken = signVerdict({
+      isAuthentic: result.isAuthentic,
+      imageUrl
     });
+
+    return res.status(200).json({ ...result, verdictToken });
 
   } catch (error) {
     console.error('analyze.js error:', error);

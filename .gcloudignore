@@ -27,3 +27,6 @@ plan/
 walkthrough/
 docs/
 guidelines/
+
+# Explicitly allow Dockerfile (overrides .gitignore)
+!Dockerfile

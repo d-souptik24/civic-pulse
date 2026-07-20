@@ -23,6 +23,7 @@ service cloud.firestore {
       allow update: if request.auth != null 
                     && request.auth.uid == userId
                     && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['points', 'badges', 'reportsCount', 'issuesResolved', 'upvotesGiven', 'lastBadgeAwardedAt']));
+      allow delete: if false;
     }
   }
 }

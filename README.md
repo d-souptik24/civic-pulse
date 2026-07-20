@@ -40,7 +40,7 @@ Every issue has a full public lifecycle. The community sees it, upvotes it, and 
 | **1** | **Vision Categorizer & Authenticity Verifier** | Analyses the uploaded photo using Gemini's multimodal vision to auto-detect the issue type and severity, and verifies the photo is a real civic problem — not a duplicate or fake. |
 | **2** | **Geo-Deduplication Agent**                    | Before creating a new report, scans a 200-metre radius to check if the same issue already exists nearby. If found, the citizen is prompted to upvote the existing report instead.  |
 | **3** | **Predictive Hotspot Mapper**                  | Clusters open issues by location and generates plain-English AI insights — _"Northern sector has 5 open potholes — high risk of vehicle damage"_ — surfaced on the live dashboard. |
-| **4** | **Autonomous Escalation Agent**                | Automatically scans all unresolved issues older than 24 hours and generates formal escalation summaries for civic authorities — no human trigger needed.                           |
+| **4** | **Autonomous Escalation Agent**                | Admins can trigger the agent from the dashboard, which then scans all unresolved issues older than 24 hours and generates formal escalation summaries, updating their status to escalated. |
 | **5** | **AI Resolution Verifier**                     | When a fix is submitted, Gemini compares the before and after photos. If the issue is confirmed resolved, the ticket auto-closes and the reporter earns community points.          |
 
 ---
@@ -60,12 +60,13 @@ Every issue has a full public lifecycle. The community sees it, upvotes it, and 
 
 | Page             | Purpose                                                     |
 | ---------------- | ----------------------------------------------------------- |
+| **Landing Page** | Platform entry point, interactive walkthrough, live stats overview, and project info |
 | **Dashboard**    | Live issue map, stats, AI hotspot insights, recent activity |
 | **Report**       | Three-step wizard — photo, location, review & submit        |
 | **Issues**       | Full list, filterable by category, status, and area         |
 | **Issue Detail** | Complete timeline, upvotes, before/after photos             |
 | **Leaderboard**  | Top contributing citizens, points, and badges               |
-| **Admin Panel**  | Resolution workflow and escalation management               |
+| **Admin Panel**  | Platform-wide analytics, escalation agent trigger, and escalated issue queue |
 
 ## 👥 Roles & Permissions
 

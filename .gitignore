@@ -39,3 +39,9 @@ npm-debug.log*
 # ── OS ───────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+
+# ── Local Design Assets ──────────────────────────────────────────────────────
+assets/
+
+# ── Local Scratch Scripts ───────────────────────────────────────────────────
+server/scratch/makeAdmin.js

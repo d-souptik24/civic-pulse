@@ -7,16 +7,28 @@ const LIBRARIES = []; // 'visualization' removed as heatmap is deprecated
 
 // STATUS_COLORS removed — imported as STATUS_COLORS_HEX from lib/constants.js
 
+// Civic Authority light map — stone/paper palette per DESIGN_IDEA_1
+// Matches the page background so the map feels printed on the same paper
+// Civic Authority Clean-Realistic light map style
+// Uses realistic colors (natural blue water, fresh green parks, highway orange) 
+// but is cleaned of POI and transit clutter. Distinct from the warm page background (#F1EEE9).
 const MAP_STYLES = [
-  { elementType: 'geometry', stylers: [{ color: '#1e293b' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#94a3b8' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#0f172a' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#334155' }] },
-  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#64748b' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f172a' }] },
-  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#334155' }] },
+  { elementType: 'geometry',             stylers: [{ color: '#F5F5F5' }] }, // Clean light gray base
+  { elementType: 'labels.text.stroke',   stylers: [{ color: '#F5F5F5' }] },
+  { elementType: 'labels.text.fill',     stylers: [{ color: '#616161' }] }, // Highly readable neutral labels
+  { featureType: 'landscape',            elementType: 'geometry',            stylers: [{ color: '#EEEEEE' }] }, // Slightly darker land
+  { featureType: 'water',                elementType: 'geometry',            stylers: [{ color: '#A2C4E0' }] }, // Realistic fresh blue water
+  { featureType: 'water',                elementType: 'labels.text.fill',    stylers: [{ color: '#3A5B75' }] },
+  { featureType: 'road',                 elementType: 'geometry',            stylers: [{ color: '#FFFFFF' }] },
+  { featureType: 'road',                 elementType: 'geometry.stroke',     stylers: [{ color: '#E0E0E0' }] },
+  { featureType: 'road.arterial',        elementType: 'geometry',            stylers: [{ color: '#FFFFFF' }] },
+  { featureType: 'road.highway',         elementType: 'geometry',            stylers: [{ color: '#FCD8A5' }] }, // Believable highway orange
+  { featureType: 'road.highway',         elementType: 'geometry.stroke',     stylers: [{ color: '#ECC48F' }] },
+  { featureType: 'poi',                  stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.park',             elementType: 'geometry',            stylers: [{ color: '#CBE5C8' }] }, // Natural fresh park green
+  { featureType: 'transit',              stylers: [{ visibility: 'off' }] },
+  { featureType: 'administrative',       elementType: 'geometry.stroke',     stylers: [{ color: '#BDBDBD' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#212121' }] },
 ];
 
 const DEFAULT_CENTER = { lat: 28.6139, lng: 77.2090 }; // Delhi
@@ -33,7 +45,7 @@ const CATEGORY_EMOJI = {
   other:        '📍',
 };
 
-export default function Map({ issues = [], onIssueClick, onCenterChange }) {
+export function Map({ issues = [], onIssueClick, onCenterChange }) {
   const [selectedIssue, setSelectedIssue]   = useState(null);
   const [userLocation,  setUserLocation]    = useState(null);
   const mapRef = useRef(null);
@@ -70,7 +82,10 @@ export default function Map({ issues = [], onIssueClick, onCenterChange }) {
 
   if (loadError) {
     return (
-      <div className="flex items-center justify-center h-full bg-slate-800 rounded-2xl text-red-400 text-sm p-6">
+      <div
+        className="flex items-center justify-center h-full rounded-xl text-sm p-6"
+        style={{ backgroundColor: 'var(--color-stone-paper)', color: 'var(--color-signal-red)' }}
+      >
         ⚠️ Map failed to load. Check your Google Maps API key.
       </div>
     );
@@ -78,17 +93,23 @@ export default function Map({ issues = [], onIssueClick, onCenterChange }) {
 
   if (!isLoaded) {
     return (
-      <div className="flex items-center justify-center h-full bg-slate-800 rounded-2xl">
+      <div
+        className="flex items-center justify-center h-full rounded-xl"
+        style={{ backgroundColor: 'var(--color-stone-paper)' }}
+      >
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-[#00D4AA] border-t-transparent rounded-full animate-spin" />
-          <span className="text-slate-400 text-sm">Loading map…</span>
+          <div
+            className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
+            style={{ borderColor: 'var(--color-plum)', borderTopColor: 'transparent' }}
+          />
+          <span style={{ color: 'var(--color-fog)', fontSize: '14px' }}>Loading map…</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative h-full w-full rounded-2xl overflow-hidden">
+    <div className="relative h-full w-full overflow-hidden" style={{ borderRadius: 'var(--radius-card)' }}>
       <GoogleMap
         mapContainerStyle={{ width: '100%', height: '100%' }}
         center={DEFAULT_CENTER}
@@ -101,6 +122,7 @@ export default function Map({ issues = [], onIssueClick, onCenterChange }) {
           zoomControl: true,
           zoomControlOptions: { position: 9 },
           clickableIcons: false,
+          gestureHandling: 'cooperative',
         }}
         onClick={() => setSelectedIssue(null)}
       >
@@ -116,8 +138,8 @@ export default function Map({ issues = [], onIssueClick, onCenterChange }) {
               icon={{
                 path: window.google.maps.SymbolPath.CIRCLE,
                 fillColor: color,
-                fillOpacity: 0.9,
-                strokeColor: '#0f172a',
+                fillOpacity: 1,
+                strokeColor: '#FFFFFF',  // Stone White ring — status color never ambiguous with selection
                 strokeWeight: 2,
                 scale: (issue.upvotes ?? 0) >= 5 ? 12 : 9,
               }}
@@ -151,32 +173,57 @@ export default function Map({ issues = [], onIssueClick, onCenterChange }) {
             position={{ lat: selectedIssue.location.lat, lng: selectedIssue.location.lng }}
             onCloseClick={() => setSelectedIssue(null)}
           >
-            <div className="bg-slate-800 text-slate-100 rounded-xl p-3 min-w-[200px] max-w-[260px]">
+            <div
+              style={{
+                backgroundColor: 'var(--color-stone-white)',
+                color: 'var(--color-ink)',
+                borderRadius: 'var(--radius-card)',
+                boxShadow: 'var(--shadow-report-card)',
+                padding: '14px 16px',
+                minWidth: '200px',
+                maxWidth: '260px',
+                fontFamily: 'var(--font-body)',
+              }}
+            >
+              {/* Issue header */}
               <div className="flex items-start gap-2 mb-2">
                 <span className="text-xl">{CATEGORY_EMOJI[selectedIssue.category] ?? '📍'}</span>
                 <div>
-                  <p className="font-semibold text-sm leading-tight">{selectedIssue.title}</p>
-                  <p className="text-xs text-slate-400 mt-0.5 capitalize">
+                  <p style={{ fontWeight: 600, fontSize: '14px', lineHeight: '1.3', color: 'var(--color-ink)' }}>
+                    {selectedIssue.title}
+                  </p>
+                  <p style={{ fontSize: '12px', color: 'var(--color-fog)', marginTop: '2px', textTransform: 'capitalize' }}>
                     {selectedIssue.category?.replace('_', ' ')}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center justify-between">
+
+              {/* Status + upvotes row */}
+              <div className="flex items-center justify-between" style={{ marginBottom: '10px' }}>
                 <span
-                  className="text-xs px-2 py-0.5 rounded-full font-medium capitalize"
+                  className="badge-status"
                   style={{
-                    backgroundColor: `${STATUS_COLORS_HEX[selectedIssue.status] ?? '#94a3b8'}22`,
-                    color: STATUS_COLORS_HEX[selectedIssue.status] ?? '#94a3b8',
+                    backgroundColor: STATUS_COLORS_HEX[selectedIssue.status] ?? 'var(--color-fog)',
+                    color: selectedIssue.status === 'in_progress' ? 'var(--color-ink)' : '#ffffff',
+                    fontSize: '10px',
+                    padding: '2px 6px',
                   }}
                 >
                   {selectedIssue.status?.replace('_', ' ')}
                 </span>
-                <span className="text-xs text-slate-400">👍 {selectedIssue.upvotes ?? 0}</span>
+                <span style={{ fontSize: '12px', color: 'var(--color-fog)' }}>👍 {selectedIssue.upvotes ?? 0}</span>
               </div>
+
+              {/* Case ID chip */}
+              <div className="case-id-chip" style={{ marginBottom: onIssueClick ? '10px' : '0' }}>
+                CP-{selectedIssue.id?.slice(0, 6).toUpperCase()}
+              </div>
+
               {onIssueClick && (
                 <button
                   onClick={() => { onIssueClick(selectedIssue); setSelectedIssue(null); }}
-                  className="mt-2 w-full text-xs bg-[#00D4AA]/15 text-[#00D4AA] hover:bg-[#00D4AA]/25 py-1 rounded-lg transition-colors"
+                  className="btn-secondary"
+                  style={{ width: '100%', fontSize: '12px', padding: '6px 12px', marginTop: '4px' }}
                 >
                   View details →
                 </button>
@@ -190,7 +237,21 @@ export default function Map({ issues = [], onIssueClick, onCenterChange }) {
       <button
         id="btn-use-my-location"
         onClick={handleUseMyLocation}
-        className="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2 glass-card text-sm font-medium text-[#00D4AA] hover:bg-white/10 transition-all duration-200 hover:scale-105 active:scale-95"
+        className="absolute bottom-4 right-4 flex items-center gap-2 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-plum)] focus-visible:ring-offset-2"
+        style={{
+          backgroundColor: 'var(--color-stone-white)',
+          color: 'var(--color-plum)',
+          border: '1px solid var(--color-stone-line)',
+          borderRadius: 'var(--radius-control)',
+          boxShadow: 'var(--shadow-card)',
+          padding: '10px 16px', // 44px touch target height equivalent
+          fontSize: '13px',
+          fontFamily: 'var(--font-body)',
+          fontWeight: 600,
+          cursor: 'pointer',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-plum)'; }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-stone-line)'; }}
       >
         <Locate size={14} />
         My Location

@@ -8,6 +8,7 @@ import {
   AlertCircle, CheckCircle, Clock, ExternalLink, Loader2,
   TrendingUp, Zap, BarChart3, Timer
 } from 'lucide-react';
+import { STATUS_CONFIG } from '../lib/constants.js';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function timeAgo(timestamp) {
@@ -19,7 +20,6 @@ function timeAgo(timestamp) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-/** Convert ms → human-readable: "X hours" or "X days" */
 function formatDuration(ms) {
   const hours = ms / (1000 * 60 * 60);
   if (hours >= 24) return `${(hours / 24).toFixed(1)} days`;
@@ -29,10 +29,10 @@ function formatDuration(ms) {
 // ── Stat Card Skeleton ─────────────────────────────────────────────────────────
 function StatSkeleton() {
   return (
-    <div className="glass-card p-5 animate-pulse">
-      <div className="w-8 h-8 rounded-xl bg-white/5 mb-3" />
-      <div className="h-8 w-20 bg-white/5 rounded-lg mb-2" />
-      <div className="h-3 w-24 bg-white/5 rounded" />
+    <div className="card-white p-5 animate-pulse">
+      <div className="w-8 h-8 rounded-xl mb-3" style={{ backgroundColor: 'var(--color-stone-line)' }} />
+      <div className="h-8 w-20 rounded-lg mb-2" style={{ backgroundColor: 'var(--color-stone-line)' }} />
+      <div className="h-3 w-24 rounded" style={{ backgroundColor: 'var(--color-stone-paper)' }} />
     </div>
   );
 }
@@ -42,17 +42,14 @@ export default function AdminPage() {
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
 
-  // Global counters (from server aggregations)
-  const [totalReports,    setTotalReports]    = useState(null); // null = loading
+  const [totalReports,    setTotalReports]    = useState(null);
   const [resolvedCount,   setResolvedCount]   = useState(null);
   const [metricsLoading,  setMetricsLoading]  = useState(true);
 
-  // Rolling 100-doc window for avg time
   const [issues, setIssues]             = useState([]);
   const [escalatedIssues, setEscalated] = useState([]);
   const [queueLoading, setQueueLoading] = useState(true);
 
-  // Escalation Agent state
   const [isEscalating, setIsEscalating]   = useState(false);
   const [escalateMsg,  setEscalateMsg]    = useState(null);
   const [escalateError, setEscalateError] = useState(null);
@@ -89,16 +86,12 @@ export default function AdminPage() {
   }, []);
 
   // ── Derived Metrics ───────────────────────────────────────────────────────────
-
-  // Resolution Rate: pure server-side — resolvedCount / totalReports
   const resolutionRate = metricsLoading || totalReports == null || resolvedCount == null
     ? null
     : totalReports === 0
       ? '0%'
       : `${Math.round((resolvedCount / totalReports) * 100)}%`;
 
-  // Avg Time to Resolve: rolling 100-doc window
-  // Explicit guard: only include issues where resolvedAt !== null
   const resolvedWithTimestamps = issues.filter(
     (i) => i.status === 'resolved' && i.resolvedAt != null && i.reportedAt != null
   );
@@ -123,7 +116,6 @@ export default function AdminPage() {
           ? `✅ Escalated ${result.escalatedCount} issue${result.escalatedCount !== 1 ? 's' : ''} successfully.`
           : '✅ Agent ran — no new issues met escalation criteria.'
       );
-      // Re-fetch metrics since statuses may have changed
       await fetchMetrics();
     } catch (err) {
       console.error('Escalation failed:', err);
@@ -135,66 +127,32 @@ export default function AdminPage() {
 
   // ── Stat Cards Config ─────────────────────────────────────────────────────────
   const statCards = [
-    {
-      id: 'stat-total-reports',
-      label: 'Total Reports',
-      value: totalReports != null ? totalReports : null,
-      icon: TrendingUp,
-      color: 'text-[#00D4AA]',
-      bg: 'bg-[#00D4AA]/10',
-      suffix: '',
-    },
-    {
-      id: 'stat-resolution-rate',
-      label: 'Resolution Rate',
-      value: resolutionRate,
-      icon: CheckCircle,
-      color: 'text-green-400',
-      bg: 'bg-green-400/10',
-      suffix: '',
-    },
-    {
-      id: 'stat-escalated',
-      label: 'Escalated Issues',
-      value: escalatedIssues.length,
-      icon: Zap,
-      color: 'text-orange-400',
-      bg: 'bg-orange-400/10',
-      suffix: '',
-    },
-    {
-      id: 'stat-avg-resolve',
-      label: 'Avg Time to Resolve',
-      value: queueLoading ? null : (avgTimeToResolve ?? 'N/A'),
-      icon: Timer,
-      color: 'text-amber-400',
-      bg: 'bg-amber-400/10',
-      suffix: '',
-    },
+    { id: 'stat-total-reports',    label: 'Total Reports',     value: totalReports != null ? totalReports : null, icon: TrendingUp, accentColor: 'var(--color-plum)', iconBg: 'rgba(75, 46, 70, 0.08)' },
+    { id: 'stat-resolution-rate',  label: 'Resolution Rate',   value: resolutionRate,                              icon: CheckCircle, accentColor: 'var(--color-plum)', iconBg: 'rgba(75, 46, 70, 0.08)' },
+    { id: 'stat-escalated',        label: 'Escalated Issues',  value: escalatedIssues.length,                      icon: Zap,         accentColor: 'var(--color-plum)', iconBg: 'rgba(75, 46, 70, 0.08)' },
+    { id: 'stat-avg-resolve',      label: 'Avg Time to Resolve', value: queueLoading ? null : (avgTimeToResolve ?? 'N/A'), icon: Timer, accentColor: 'var(--color-plum)',  iconBg: 'rgba(75, 46, 70, 0.08)' },
   ];
 
-  // Show spinner while Firebase resolves the auth state (user === undefined = loading)
   if (user === undefined) {
     return (
-      <div className="min-h-screen pt-24 flex justify-center items-center">
-        <Loader2 size={32} className="animate-spin text-slate-500" />
+      <div className="min-h-screen pt-24 flex justify-center items-center" style={{ backgroundColor: 'var(--color-stone-paper)' }}>
+        <Loader2 size={32} className="animate-spin" style={{ color: 'var(--color-fog)' }} />
       </div>
     );
   }
 
-  // Block non-admins even if they navigate to /admin directly via URL
   if (!isAdmin) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] pt-24 flex items-center justify-center px-4">
-        <div className="glass-card p-12 text-center max-w-md w-full">
-          <AlertCircle size={48} className="text-red-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-slate-200 mb-2">Access Denied</h1>
-          <p className="text-slate-400 text-sm mb-6">
+      <div className="min-h-[calc(100vh-4rem)] pt-24 flex items-center justify-center px-4" style={{ backgroundColor: 'var(--color-stone-paper)' }}>
+        <div className="card-white p-12 text-center max-w-md w-full">
+          <AlertCircle size={48} className="mx-auto mb-4" style={{ color: 'var(--color-signal-red)' }} />
+          <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-ink)' }}>Access Denied</h1>
+          <p className="text-sm mb-6" style={{ color: 'var(--color-fog)' }}>
             You do not have the required administrative privileges to view this dashboard.
           </p>
           <button
             onClick={() => navigate('/')}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#00D4AA] hover:bg-[#00BF97] text-slate-900 text-sm font-bold transition-all hover:scale-105 active:scale-95"
+            className="btn-primary w-full"
           >
             Return to Home
           </button>
@@ -204,34 +162,38 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen pt-20 pb-24 md:pb-10 px-4 max-w-6xl mx-auto animate-fade-in">
+    <div
+      className="min-h-screen pt-20 pb-24 md:pb-10 px-4 max-w-6xl mx-auto animate-fade-in"
+      style={{ backgroundColor: 'var(--color-stone-paper)' }}
+    >
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
-          <BarChart3 className="text-[#00D4AA]" size={24} />
+        <h1
+          className="font-bold flex items-center gap-2"
+          style={{ fontSize: 'var(--text-heading)', lineHeight: 'var(--leading-heading)', color: 'var(--color-ink)' }}
+        >
+          <BarChart3 style={{ color: 'var(--color-plum)' }} size={28} />
           Admin Dashboard
         </h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <p className="text-sm mt-1" style={{ color: 'var(--color-fog)' }}>
           Platform-wide analytics and agentic management tools
         </p>
       </div>
 
       {/* ── Stat Cards Grid ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {statCards.map(({ id, label, value, icon: Icon, color, bg }) =>
+        {statCards.map(({ id, label, value, icon: Icon, accentColor, iconBg }) =>
           metricsLoading && (label === 'Total Reports' || label === 'Resolution Rate') ? (
             <StatSkeleton key={id} />
           ) : (
-            <div key={id} id={id} className="glass-card p-5 flex flex-col gap-2">
-              <div className={`w-8 h-8 rounded-xl ${bg} flex items-center justify-center`}>
-                <Icon size={15} className={color} />
+            <div key={id} id={id} className="card-white p-4 sm:p-5 flex flex-col gap-2">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: iconBg }}>
+                <Icon size={15} style={{ color: accentColor }} />
               </div>
-              <span className={`text-2xl font-extrabold tracking-tight ${color}`}>
-                {value ?? (
-                  <Loader2 size={20} className="animate-spin" />
-                )}
+              <span className="text-2xl font-extrabold tracking-tight" style={{ color: 'var(--color-ink)', letterSpacing: '-0.48px' }}>
+                {value ?? <Loader2 size={20} className="animate-spin" />}
               </span>
-              <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">
+              <span className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--color-fog)' }}>
                 {label}
               </span>
             </div>
@@ -240,21 +202,22 @@ export default function AdminPage() {
       </div>
 
       {/* ── Escalation Agent Trigger ── */}
-      <div className="glass-card p-6 mb-8">
+      <div className="card-white p-4 sm:p-6 mb-8">
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-orange-400/10 flex items-center justify-center shrink-0">
-            <Zap size={18} className="text-orange-400" />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(75, 46, 70, 0.08)' }}>
+            <Zap size={18} style={{ color: 'var(--color-plum)' }} />
           </div>
           <div className="flex-1">
-            <h2 className="text-base font-bold text-slate-100 mb-1">Escalation Agent</h2>
-            <p className="text-sm text-slate-400 mb-4">
-              Scans for open issues older than 24h with 3+ upvotes. Gemini drafts formal escalation summaries and updates their status to <span className="text-orange-400">escalated</span>.
+            <h2 className="text-base font-bold mb-1" style={{ color: 'var(--color-ink)' }}>Escalation Agent</h2>
+            <p className="text-sm mb-4" style={{ color: 'var(--color-fog)' }}>
+              Scans for open issues older than 24h with 3+ upvotes. Gemini drafts formal escalation summaries and updates their status to{' '}
+              <span className="font-semibold" style={{ color: 'var(--color-plum)' }}>escalated</span>.
             </p>
             <button
               id="btn-run-escalation"
               onClick={handleRunEscalation}
               disabled={isEscalating}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-400/20 hover:bg-orange-400/30 border border-orange-400/30 text-orange-400 text-sm font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-orange-400/50"
+              className="btn-primary flex items-center gap-2 px-5 py-2.5 text-sm font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isEscalating ? (
                 <><Loader2 size={14} className="animate-spin" /> Running Agent…</>
@@ -264,12 +227,12 @@ export default function AdminPage() {
             </button>
 
             {escalateMsg && (
-              <p className="mt-3 text-sm text-green-400 bg-green-400/10 border border-green-400/20 rounded-xl px-4 py-2.5">
+              <p className="mt-3 text-sm px-4 py-2.5 rounded-xl animate-fade-in" style={{ color: 'var(--color-signal-green)', backgroundColor: 'rgba(62,122,84,0.08)', border: '1px solid rgba(62,122,84,0.2)' }}>
                 {escalateMsg}
               </p>
             )}
             {escalateError && (
-              <p className="mt-3 text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-2.5">
+              <p className="mt-3 text-sm px-4 py-2.5 rounded-xl animate-fade-in" style={{ color: 'var(--color-signal-red)', backgroundColor: 'rgba(178,59,46,0.06)', border: '1px solid rgba(178,59,46,0.2)' }}>
                 {escalateError}
               </p>
             )}
@@ -278,74 +241,98 @@ export default function AdminPage() {
       </div>
 
       {/* ── Escalation Queue ── */}
-      <div className="glass-card overflow-hidden">
-        <div className="px-6 py-4 border-b border-white/10 flex items-center gap-2">
-          <AlertCircle size={16} className="text-orange-400" />
-          <h2 className="font-semibold text-slate-100">
-            Escalation Queue
-          </h2>
+      <div className="space-y-4">
+        <div className="px-1 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={18} style={{ color: 'var(--color-plum)' }} />
+            <h2 className="font-bold text-lg" style={{ color: 'var(--color-ink)' }}>
+              Escalation Queue
+            </h2>
+          </div>
           {escalatedIssues.length > 0 && (
-            <span className="ml-auto text-xs bg-orange-400/20 text-orange-400 border border-orange-400/30 px-2.5 py-0.5 rounded-full font-semibold">
-              {escalatedIssues.length} pending
+            <span
+              className={`text-[10px] px-2.5 py-0.5 font-semibold uppercase tracking-wider rounded-full border ${STATUS_CONFIG.escalated.border} ${STATUS_CONFIG.escalated.bg} ${STATUS_CONFIG.escalated.color}`}
+            >
+              {escalatedIssues.length} escalated
             </span>
           )}
         </div>
 
         {queueLoading ? (
-          // Fixed-height skeleton — queue is unbounded so row-count matching
-          // would reintroduce the layout-jump bug fixed in the leaderboard.
-          // A 200px pulse region matches the visual weight without the mismatch risk.
-          <div className="p-6 space-y-4 animate-pulse">
-            <div className="h-48 bg-white/5 rounded-xl" />
-          </div>
-        ) : escalatedIssues.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-slate-600 gap-3">
-            <CheckCircle size={36} />
-            <p className="text-sm font-medium text-slate-500">No escalated issues</p>
-            <p className="text-xs text-slate-600">All caught up! Run the agent to check for new issues.</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-white/5">
-            {escalatedIssues.map((issue) => (
-              <div
-                key={issue.id}
-                className="px-6 py-4 flex items-start gap-4 hover:bg-white/5 transition-colors"
-              >
-                {/* Issue info */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-100 line-clamp-1 mb-1">
-                    {issue.title}
-                  </p>
-                  {issue.aiEscalationSummary && (
-                    <p className="text-xs text-slate-500 line-clamp-2 mb-2">
-                      {issue.aiEscalationSummary}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-3 text-xs text-slate-600">
-                    <span className="flex items-center gap-1">
-                      <Clock size={10} />
-                      {timeAgo(issue.reportedAt)}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      👍 {issue.upvotes ?? 0} upvotes
-                    </span>
-                    <span className="capitalize text-slate-500">
-                      {issue.category?.replace('_', ' ')}
-                    </span>
-                  </div>
+          <div className="space-y-3">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="card-white p-3.5 sm:p-4 flex items-center gap-4 animate-pulse">
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 rounded w-1/3" style={{ backgroundColor: 'var(--color-stone-line)' }} />
+                  <div className="h-3 rounded w-3/4" style={{ backgroundColor: 'var(--color-stone-paper)' }} />
                 </div>
-
-                {/* Action */}
-                <button
-                  id={`btn-resolve-${issue.id}`}
-                  onClick={() => navigate(`/issues/${issue.id}`)}
-                  className="shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#00D4AA]/10 hover:bg-[#00D4AA]/20 border border-[#00D4AA]/30 text-[#00D4AA] text-xs font-semibold transition-all hover:scale-105 active:scale-95"
-                >
-                  <ExternalLink size={12} />
-                  Resolve Issue
-                </button>
+                <div className="w-24 h-8 rounded-lg" style={{ backgroundColor: 'var(--color-stone-line)' }} />
               </div>
             ))}
+          </div>
+        ) : escalatedIssues.length === 0 ? (
+          <div className="card-white flex flex-col items-center justify-center py-12 gap-3" style={{ color: 'var(--color-fog)' }}>
+            <CheckCircle size={36} />
+            <p className="text-sm font-medium">No escalated issues</p>
+            <p className="text-xs" style={{ color: 'var(--color-fog)' }}>All caught up! Run the agent to check for new issues.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {escalatedIssues.map((issue) => {
+              const cfg = STATUS_CONFIG.escalated;
+              return (
+                <div
+                  key={issue.id}
+                  onClick={() => navigate(`/issues/${issue.id}`)}
+                  className="card-white p-3.5 sm:p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all duration-200 hover:scale-[1.01] hover:shadow-md cursor-pointer hover:border-[var(--color-plum-light)] hover:bg-[#F8F6F4] animate-fade-in"
+                >
+                  {/* Issue info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-1.5 flex-wrap">
+                      <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-ink)' }}>
+                        {issue.title}
+                      </p>
+                      <span
+                        className={`text-[10px] px-2.5 py-0.5 font-semibold uppercase tracking-wider rounded-full border ${cfg.color} ${cfg.bg} ${cfg.border}`}
+                      >
+                        {cfg.label}
+                      </span>
+                    </div>
+                    {issue.aiEscalationSummary && (
+                      <p className="text-xs line-clamp-2 mb-3" style={{ color: 'var(--color-fog)' }}>
+                        {issue.aiEscalationSummary}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--color-fog)' }}>
+                      <span className="flex items-center gap-1">
+                        <Clock size={10} />
+                        {timeAgo(issue.reportedAt)}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        👍 {issue.upvotes ?? 0} upvotes
+                      </span>
+                      <span className="capitalize">
+                        📍 {issue.category?.replace('_', ' ')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Action */}
+                  <button
+                    id={`btn-resolve-${issue.id}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/issues/${issue.id}`);
+                    }}
+                    className="btn-secondary shrink-0 flex items-center gap-1.5"
+                    style={{ fontSize: '12px', padding: '8px 14px' }}
+                  >
+                    <ExternalLink size={12} />
+                    Resolve Issue
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

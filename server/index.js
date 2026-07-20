@@ -10,6 +10,10 @@ dotenv.config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
+// Required for GCP: trust the upstream proxy (Load Balancer/Ingress) 
+// so rate limiters see the actual client IP instead of the proxy IP.
+app.set('trust proxy', 1);
+
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '10mb' })); // large enough for base64 images
 
@@ -28,6 +32,17 @@ const apiLimiter = rateLimit({
 });
 
 app.use('/api/', apiLimiter);
+
+// Stricter rate limiter specifically for AI analysis (Gemini API cost protection)
+const analyzeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 analysis requests per window
+  message: { error: 'Too many analysis requests. Please wait before trying again.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api/analyze', analyzeLimiter);
 
 // ── 1. API ROUTES (must come FIRST — before static serving) ──────────────────
 import analyzeRouter from './routes/analyze.js';

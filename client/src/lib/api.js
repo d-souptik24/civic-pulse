@@ -23,7 +23,7 @@ async function request(path, options = {}, token = null) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || `Request failed: ${res.status}`);
+    throw new Error(err.error || err.reason || `Request failed: ${res.status}`);
   }
   return res.json();
 }

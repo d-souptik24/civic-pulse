@@ -6,13 +6,13 @@ import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { Trophy, Star, Shield, Zap, Droplets, MapPin, ThumbsUp, Award } from 'lucide-react';
 
-// ── Badge Configuration ───────────────────────────────────────────────────────
+// ── Badge Configuration (single Sprout/Green accent per design system) ────────
 const BADGE_CONFIG = {
-  'Pothole Patrol':    { icon: MapPin,    color: 'text-amber-400',   bg: 'bg-amber-400/10',  border: 'border-amber-400/30',  desc: 'Reported a pothole' },
-  'Water Warden':      { icon: Droplets,  color: 'text-blue-400',    bg: 'bg-blue-400/10',   border: 'border-blue-400/30',   desc: 'Reported a water leak' },
-  'Light Keeper':      { icon: Zap,       color: 'text-yellow-400',  bg: 'bg-yellow-400/10', border: 'border-yellow-400/30', desc: 'Reported a streetlight issue' },
-  'Upvote Champion':   { icon: ThumbsUp,  color: 'text-purple-400',  bg: 'bg-purple-400/10', border: 'border-purple-400/30', desc: 'Gave 20 upvotes to the community' },
-  'Community Savior':  { icon: Shield,    color: 'text-brand',       bg: 'bg-brand/10',      border: 'border-brand/30',      desc: 'Had an issue verified as resolved by AI' },
+  'Pothole Patrol':   { icon: MapPin,   desc: 'Reported a pothole' },
+  'Water Warden':     { icon: Droplets, desc: 'Reported a water leak' },
+  'Light Keeper':     { icon: Zap,      desc: 'Reported a streetlight issue' },
+  'Upvote Champion':  { icon: ThumbsUp, desc: 'Gave 20 upvotes to the community' },
+  'Community Savior': { icon: Shield,   desc: 'Had an issue verified as resolved by AI' },
 };
 
 // ── Rank Medal Display ────────────────────────────────────────────────────────
@@ -20,17 +20,23 @@ function RankMedal({ rank }) {
   if (rank === 1) return <span className="text-2xl">🥇</span>;
   if (rank === 2) return <span className="text-2xl">🥈</span>;
   if (rank === 3) return <span className="text-2xl">🥉</span>;
-  return <span className="text-slate-400 font-bold text-lg w-8 text-center">#{rank}</span>;
+  return <span className="font-bold text-lg w-8 text-center" style={{ color: 'var(--color-fog)' }}>#{rank}</span>;
 }
 
-// ── Badge Chip ────────────────────────────────────────────────────────────────
+// ── Badge Chip — unified sprout accent (per design system single-accent rule) ─
 function BadgeChip({ name }) {
   const config = BADGE_CONFIG[name];
   if (!config) return null;
   const Icon = config.icon;
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${config.color} ${config.bg} ${config.border}`}
+      className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium"
+      style={{
+        color: 'var(--color-signal-green)',
+        backgroundColor: 'rgba(62,122,84,0.1)',
+        border: '1px solid rgba(62,122,84,0.2)',
+        borderRadius: 'var(--radius-chip)',
+      }}
       title={config.desc}
     >
       <Icon size={10} />
@@ -40,12 +46,19 @@ function BadgeChip({ name }) {
 }
 
 // ── Stat Card ─────────────────────────────────────────────────────────────────
-function StatCard({ label, value, icon: Icon, color, onClick }) {
+function StatCard({ label, value, icon: Icon, onClick }) {
   return (
-    <div onClick={onClick} className={`glass-card p-4 flex flex-col items-center gap-1 text-center ${onClick ? 'cursor-pointer hover:bg-white/10 hover:scale-105 transition-all' : ''}`}>
-      <Icon size={20} className={color} />
-      <p className="text-2xl font-bold text-slate-100">{value ?? 0}</p>
-      <p className="text-xs text-slate-400">{label}</p>
+    <div
+      onClick={onClick}
+      className={`card-white p-4 flex flex-col items-center gap-1 text-center transition-all duration-200 ${
+        onClick 
+          ? 'cursor-pointer hover:scale-[1.03] hover:border-[var(--color-plum-light)] hover:shadow-md hover:bg-[#F8F6F4]' 
+          : 'cursor-default'
+      }`}
+    >
+      <Icon size={20} style={{ color: 'var(--color-plum)' }} />
+      <p className="text-2xl font-bold" style={{ color: 'var(--color-ink)', letterSpacing: '-0.48px' }}>{value ?? 0}</p>
+      <p className="text-xs" style={{ color: 'var(--color-fog)' }}>{label}</p>
     </div>
   );
 }
@@ -109,85 +122,81 @@ export default function LeaderboardPage() {
   useEffect(() => {
     if (!myProfile || confettiFired.current) return;
 
-    // Handle case where lastBadgeAwardedAt is null/absent (schema extension safety)
     const lastBadgeTs = myProfile.lastBadgeAwardedAt;
     if (!lastBadgeTs) return;
 
-    // Convert Firestore Timestamp to milliseconds
     const lastBadgeMs = lastBadgeTs.toMillis ? lastBadgeTs.toMillis() : lastBadgeTs * 1000;
     const nowMs = Date.now();
     const sixtySeconds = 60 * 1000;
 
     if (nowMs - lastBadgeMs < sixtySeconds) {
       confettiFired.current = true;
-      // Burst from both sides for maximum drama
-      confetti({
-        particleCount: 120,
-        spread: 70,
-        origin: { x: 0.3, y: 0.6 },
-        colors: ['#00D4AA', '#00BF97', '#FFD700', '#A78BFA'],
-      });
+      confetti({ particleCount: 120, spread: 70, origin: { x: 0.3, y: 0.6 }, colors: ['#27ae60', '#defaca', '#FFD700', '#f49a40'] });
       setTimeout(() => {
-        confetti({
-          particleCount: 120,
-          spread: 70,
-          origin: { x: 0.7, y: 0.6 },
-          colors: ['#00D4AA', '#00BF97', '#FFD700', '#A78BFA'],
-        });
+        confetti({ particleCount: 120, spread: 70, origin: { x: 0.7, y: 0.6 }, colors: ['#27ae60', '#defaca', '#FFD700', '#f49a40'] });
       }, 200);
     }
   }, [myProfile]);
 
   return (
-    <div className="min-h-screen bg-slate-900 pt-20 pb-24 md:pb-12 px-4 animate-fade-in">
-      <div className="max-w-3xl mx-auto space-y-8">
+    <div
+      className="min-h-screen pt-20 pb-24 md:pb-12 px-4 animate-fade-in"
+      style={{ backgroundColor: 'var(--color-stone-paper)' }}
+    >
+      <div className="max-w-3xl mx-auto space-y-6">
 
-        {/* ── Header ────────────────────────────────────────────────────────── */}
-        <div className="text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand/10 border border-brand/20 text-brand text-sm font-medium mb-4">
+        {/* ── Header ──────────────────────────────────────────────────── */}
+        <div className="text-center py-4">
+          <div
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium mb-4"
+            style={{ backgroundColor: 'rgba(75, 46, 70, 0.08)', border: '1px solid rgba(75, 46, 70, 0.15)', color: 'var(--color-plum)' }}
+          >
             <Trophy size={14} />
             Community Leaderboard
           </div>
-          <h1 className="text-4xl font-bold text-slate-100 mb-2">Top Citizens</h1>
-          <p className="text-slate-400">Earn points by reporting, upvoting, and resolving issues in your community.</p>
+          <h1
+            className="font-bold mb-2"
+            style={{ fontSize: 'var(--text-heading)', lineHeight: 'var(--leading-heading)', color: 'var(--color-ink)' }}
+          >
+            Top Citizens
+          </h1>
+          <p style={{ color: 'var(--color-fog)' }}>Earn points by reporting, upvoting, and resolving issues in your community.</p>
         </div>
 
-        {/* ── My Stats (only shown when logged in) ─────────────────────────── */}
+        {/* ── My Stats (only shown when logged in) ─────────────────── */}
         {user && myProfile && (
-          <div className="glass-card p-6 space-y-4">
+          <div className="card-white p-4 sm:p-6 space-y-4">
             <div className="flex items-center gap-3">
               <img
                 src={user.photoURL}
                 alt={user.displayName}
-                className="w-12 h-12 rounded-full ring-2 ring-brand/50"
+                className="w-12 h-12 rounded-full shrink-0"
+                style={{ boxShadow: '0 0 0 2px var(--color-plum)' }}
               />
               <div>
-                <p className="font-semibold text-slate-100">{user.displayName}</p>
-                <p className="text-sm text-slate-400">Your stats</p>
+                <p className="font-semibold" style={{ color: 'var(--color-ink)' }}>{user.displayName}</p>
+                <p className="text-sm" style={{ color: 'var(--color-fog)' }}>Your stats</p>
               </div>
-              <div className="ml-auto flex items-center gap-2 glass-card px-3 py-1.5">
-                <Star size={14} className="text-brand" />
-                <span className="font-bold text-brand">Rank #{myRank}</span>
+              <div
+                className="ml-auto flex items-center gap-2 px-3 py-1.5"
+                style={{ backgroundColor: 'rgba(75, 46, 70, 0.08)', border: '1px solid rgba(75, 46, 70, 0.15)', borderRadius: 'var(--radius-chip)', color: 'var(--color-plum)' }}
+              >
+                <Star size={14} />
+                <span className="font-bold text-sm">Rank #{myRank}</span>
               </div>
             </div>
 
             {/* Stat Cards */}
             <div className="grid grid-cols-3 gap-3">
-              <StatCard label="Points" value={myProfile.points} icon={Star} color="text-brand" />
-              <StatCard 
-                label="Reports" 
-                value={myProfile.reportsCount} 
-                icon={MapPin} 
-                color="text-amber-400" 
-                onClick={() => navigate('/issues?reporter=me')}
-              />
-              <StatCard label="Resolved" value={myProfile.issuesResolved} icon={Shield} color="text-green-400" />
+              <StatCard label="Points"   value={myProfile.points}        icon={Star}   />
+              <StatCard label="Reports"  value={myProfile.reportsCount}  icon={MapPin} onClick={() => navigate('/issues?reporter=me')} />
+              <StatCard label="Resolved" value={myProfile.issuesResolved} icon={Shield} />
             </div>
 
             {/* Badges */}
             {myProfile.badges && myProfile.badges.length > 0 && (
               <div>
-                <p className="text-xs text-slate-400 mb-2 font-medium uppercase tracking-wider">Your Badges</p>
+                <p className="text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: 'var(--color-fog)' }}>Your Badges</p>
                 <div className="flex flex-wrap gap-2">
                   {myProfile.badges.map(badge => (
                     <BadgeChip key={badge} name={badge} />
@@ -198,45 +207,49 @@ export default function LeaderboardPage() {
           </div>
         )}
 
-        {/* ── Top 10 List ───────────────────────────────────────────────────── */}
-        <div className="glass-card overflow-hidden">
-          <div className="px-6 py-4 border-b border-white/10 flex items-center gap-2">
-            <Award size={16} className="text-brand" />
-            <h2 className="font-semibold text-slate-200">Top 10 Citizens</h2>
+        {/* ── Top 10 List ─────────────────────────────────────────── */}
+        <div className="space-y-4">
+          <div className="px-1 flex items-center gap-2">
+            <Award size={18} style={{ color: 'var(--color-plum)' }} />
+            <h2 className="font-bold text-lg" style={{ color: 'var(--color-ink)' }}>Top 10 Citizens</h2>
           </div>
 
           {loading ? (
-            <div className="p-6 space-y-4">
-              {Array.from({ length: 10 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-4 animate-pulse">
-                  <div className="w-8 h-6 bg-white/10 rounded" />
-                  <div className="w-10 h-10 rounded-full bg-white/10" />
+            <div className="space-y-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="card-white p-4 flex items-center gap-4 animate-pulse">
+                  <div className="w-8 h-6 rounded" style={{ backgroundColor: 'var(--color-stone-line)' }} />
+                  <div className="w-10 h-10 rounded-full" style={{ backgroundColor: 'var(--color-stone-line)' }} />
                   <div className="flex-1 space-y-2">
-                    <div className="h-3 bg-white/10 rounded w-32" />
-                    <div className="h-2 bg-white/10 rounded w-20" />
+                    <div className="h-3 rounded w-32" style={{ backgroundColor: 'var(--color-stone-line)' }} />
+                    <div className="h-2 rounded w-20" style={{ backgroundColor: 'var(--color-stone-paper)' }} />
                   </div>
-                  <div className="h-4 bg-white/10 rounded w-16" />
+                  <div className="h-4 rounded w-16" style={{ backgroundColor: 'var(--color-stone-line)' }} />
                 </div>
               ))}
             </div>
           ) : topUsers.length === 0 ? (
-            <div className="p-12 text-center text-slate-400">
+            <div className="card-white p-12 text-center" style={{ color: 'var(--color-fog)' }}>
               <Trophy size={40} className="mx-auto mb-3 opacity-30" />
               <p>No citizens on the board yet. Be the first!</p>
             </div>
           ) : (
-            <ul className="divide-y divide-white/5">
+            <div className="space-y-3">
               {topUsers.map((citizen) => {
                 const isMe = user && citizen.id === user.uid;
                 return (
-                  <li
+                  <div
                     key={citizen.id}
-                    onClick={() => {
-                      if (isAdmin) navigate(`/issues?reporter=${citizen.id}&name=${encodeURIComponent(citizen.displayName || 'Citizen')}`);
+                    onClick={() => navigate(`/issues?reporter=${citizen.id}&name=${encodeURIComponent(citizen.displayName || 'Citizen')}`)}
+                    className={`card-white p-4 flex items-center gap-4 transition-all duration-200 hover:scale-[1.01] hover:shadow-md cursor-pointer ${
+                      isMe ? 'hover:bg-[#F5EEF5]' : 'hover:bg-[#F8F6F4]'
+                    }`}
+                    style={{
+                      borderLeftWidth: isMe ? '4px' : '1px',
+                      borderLeftColor: isMe ? 'var(--color-plum)' : 'var(--color-stone-line)',
+                      borderColor: isMe ? 'var(--color-plum-light)' : 'var(--color-stone-line)',
+                      backgroundColor: isMe ? '#FAF6FA' : 'var(--color-stone-white)',
                     }}
-                    className={`group flex items-center gap-4 px-6 py-4 transition-colors duration-200 ${
-                      isMe ? 'bg-brand/5 border-l-2 border-brand' : 'hover:bg-white/3'
-                    } ${isAdmin ? 'cursor-pointer hover:bg-white/10' : ''}`}
                   >
                     {/* Rank */}
                     <div className="w-8 flex justify-center shrink-0">
@@ -248,11 +261,15 @@ export default function LeaderboardPage() {
                       <img
                         src={citizen.photoURL}
                         alt={citizen.displayName}
-                        className="w-10 h-10 rounded-full ring-1 ring-white/20 shrink-0"
+                        className="w-10 h-10 rounded-full shrink-0"
+                        style={{ boxShadow: '0 0 0 1px var(--color-stone-line)' }}
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center shrink-0">
-                        <span className="text-slate-300 font-semibold text-sm">
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: 'var(--color-stone-paper)', border: '1px solid var(--color-stone-line)' }}
+                      >
+                        <span className="font-semibold text-sm" style={{ color: 'var(--color-plum)' }}>
                           {citizen.displayName?.[0] ?? '?'}
                         </span>
                       </div>
@@ -261,19 +278,18 @@ export default function LeaderboardPage() {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className={`font-medium truncate ${isMe ? 'text-brand' : 'text-slate-200'}`}>
+                        <p className="font-semibold truncate" style={{ color: 'var(--color-ink)' }}>
                           {citizen.displayName ?? 'Anonymous'}
-                          {isMe && <span className="text-xs text-brand ml-1">(You)</span>}
+                          {isMe && <span className="text-xs ml-1 font-normal" style={{ color: 'var(--color-plum)' }}>(You)</span>}
                         </p>
                       </div>
-                      {/* Badges */}
                       {citizen.badges && citizen.badges.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
                           {citizen.badges.slice(0, 3).map(badge => (
                             <BadgeChip key={badge} name={badge} />
                           ))}
                           {citizen.badges.length > 3 && (
-                            <span className="text-xs text-slate-500">+{citizen.badges.length - 3} more</span>
+                            <span className="text-xs" style={{ color: 'var(--color-fog)' }}>+{citizen.badges.length - 3} more</span>
                           )}
                         </div>
                       )}
@@ -281,33 +297,37 @@ export default function LeaderboardPage() {
 
                     {/* Points */}
                     <div className="text-right shrink-0">
-                      <p className="font-bold text-brand text-lg">{citizen.points ?? 0}</p>
-                      <p className="text-xs text-slate-400">points</p>
+                      <p className="font-bold text-lg" style={{ color: 'var(--color-plum)' }}>{citizen.points ?? 0}</p>
+                      <p className="text-xs" style={{ color: 'var(--color-fog)' }}>points</p>
                     </div>
-                  </li>
+                  </div>
                 );
               })}
-            </ul>
+            </div>
           )}
         </div>
 
-        {/* ── Points Guide ──────────────────────────────────────────────────── */}
-        <div className="glass-card p-6">
-          <h3 className="font-semibold text-slate-200 mb-4 flex items-center gap-2">
-            <Zap size={16} className="text-brand" />
+        {/* ── Points Guide ─────────────────────────────────────────── */}
+        <div className="card-white p-6">
+          <h3 className="font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--color-ink)' }}>
+            <Zap size={16} style={{ color: 'var(--color-plum)' }} />
             How to Earn Points
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
             {[
-              { action: 'Report a verified issue', pts: '+75', icon: MapPin, color: 'text-amber-400' },
-              { action: 'Your issue gets upvoted', pts: '+10', icon: ThumbsUp, color: 'text-purple-400' },
-              { action: 'Issue resolved by AI', pts: '+100', icon: Shield, color: 'text-green-400' },
-            ].map(({ action, pts, icon: Icon, color }) => (
-              <div key={action} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
-                <Icon size={18} className={color} />
+              { action: 'Report a verified issue', pts: '+75',  icon: MapPin  },
+              { action: 'Your issue gets upvoted', pts: '+10',  icon: ThumbsUp },
+              { action: 'Issue resolved by AI',    pts: '+100', icon: Shield  },
+            ].map(({ action, pts, icon: Icon }) => (
+              <div
+                key={action}
+                className="flex items-center gap-3 p-3"
+                style={{ backgroundColor: 'var(--color-stone-paper)', borderRadius: '16px', border: '1px solid var(--color-stone-line)' }}
+              >
+                <Icon size={18} style={{ color: 'var(--color-plum)' }} />
                 <div>
-                  <p className="text-slate-300">{action}</p>
-                  <p className={`font-bold ${color}`}>{pts} pts</p>
+                  <p style={{ color: 'var(--color-ink)' }}>{action}</p>
+                  <p className="font-bold" style={{ color: 'var(--color-signal-green)' }}>{pts} pts</p>
                 </div>
               </div>
             ))}

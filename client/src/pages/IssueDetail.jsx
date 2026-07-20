@@ -37,10 +37,10 @@ function StatusTimeline({ statusHistory }) {
   if (!statusHistory?.length) return null;
 
   return (
-    <div className="glass-card p-5">
-      <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">Issue Timeline</h3>
+    <div className="glass-card p-4 sm:p-5">
+      <h3 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--color-fog)' }}>Issue Timeline</h3>
       <div className="relative">
-        <div className="absolute left-3.5 top-0 bottom-0 w-px bg-white/10" />
+        <div className="absolute left-3.5 top-0 bottom-0 w-px" style={{ backgroundColor: 'var(--color-stone-line)' }} />
         <div className="space-y-5">
           {[...statusHistory].reverse().map((entry, idx) => {
             const cfg = STATUS_CONFIG[entry.status] || STATUS_CONFIG.open;
@@ -53,7 +53,7 @@ function StatusTimeline({ statusHistory }) {
                   <p className={`text-sm font-semibold capitalize ${cfg.color}`}>
                     {entry.status?.replace('_', ' ')}
                   </p>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--color-fog)' }}>
                     {entry.changedBy === 'ai_verifier' ? '🤖 AI Verifier' : (entry.changedBy || 'System')}
                     {entry.timestamp && ` · ${formatTimestamp(entry.timestamp)}`}
                   </p>
@@ -169,7 +169,8 @@ export default function IssueDetail() {
     try {
       // 1. Upload "After" photo to Firebase Storage (client-side, same pattern as Step1Photo)
       const storageRef = ref(storage, `resolutions/${id}_${Date.now()}_${resolutionFile.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, resolutionFile);
+      const metadata = { customMetadata: { userId: user.uid } };
+      const uploadTask = uploadBytesResumable(storageRef, resolutionFile, metadata);
 
       const resolvedPhotoUrl = await new Promise((resolve, reject) => {
         uploadTask.on(
@@ -230,18 +231,18 @@ export default function IssueDetail() {
                 <div className="h-3 bg-white/5 rounded w-5/6" />
               </div>
             </div>
-            <div className="glass-card p-5">
+            <div className="glass-card p-4 sm:p-5">
               <div className="h-56 bg-white/5 rounded-xl" />
             </div>
           </div>
           {/* Right col skeleton */}
           <div className="space-y-5">
-            <div className="glass-card p-5 space-y-3">
+            <div className="glass-card p-4 sm:p-5 space-y-3">
               <div className="h-4 bg-white/10 rounded w-24" />
               <div className="h-9 bg-white/5 rounded-xl" />
               <div className="h-9 bg-white/5 rounded-xl" />
             </div>
-            <div className="glass-card p-5">
+            <div className="glass-card p-4 sm:p-5">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-3 py-2">
                   <div className="w-3 h-3 rounded-full bg-white/10 shrink-0" />
@@ -260,8 +261,8 @@ export default function IssueDetail() {
       <div className="min-h-[calc(100vh-4rem)] pt-24 flex items-center justify-center">
         <div className="glass-card p-12 text-center">
           <p className="text-4xl mb-4">🔍</p>
-          <h1 className="text-2xl font-bold text-slate-200 mb-2">Issue Not Found</h1>
-          <p className="text-slate-400 text-sm mb-6">This issue may have been removed or the link is invalid.</p>
+          <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-ink)' }}>Issue Not Found</h1>
+          <p className="text-sm mb-6" style={{ color: 'var(--color-fog)' }}>This issue may have been removed or the link is invalid.</p>
           <button onClick={() => navigate('/')} className="btn-primary">← Back to Dashboard</button>
         </div>
       </div>
@@ -281,36 +282,42 @@ export default function IssueDetail() {
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-slate-400 hover:text-slate-200 transition-colors text-sm"
+          className="flex items-center gap-1.5 transition-colors text-sm"
+          style={{ color: 'var(--color-fog)' }}
+          onMouseEnter={e => e.currentTarget.style.color = 'var(--color-ink)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--color-fog)'}
         >
           <ArrowLeft size={16} />
           Back
         </button>
-        <ChevronRight size={14} className="text-slate-600" />
-        <span className="text-slate-400 text-sm capitalize">{issue.category?.replace('_', ' ')}</span>
+        <ChevronRight size={14} style={{ color: 'var(--color-stone-line)' }} />
+        <span className="text-sm capitalize" style={{ color: 'var(--color-fog)' }}>{issue.category?.replace('_', ' ')}</span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* ── LEFT: Issue details ────────────────────────────────────────────── */}
         <div className="lg:col-span-2 space-y-5">
           {/* Title & Status */}
-          <div className="glass-card p-6">
+          <div className="glass-card p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4 mb-4">
-              <h1 className="text-xl font-bold text-slate-100 leading-tight">{issue.title}</h1>
+              <h1 className="text-xl font-bold leading-tight" style={{ color: 'var(--color-ink)' }}>{issue.title}</h1>
               <span className={`text-xs px-2.5 py-1 rounded-full shrink-0 font-semibold capitalize ${cfg.color} ${cfg.bg} border ${cfg.border}`}>
                 {cfg.label}
               </span>
             </div>
 
-            <div className="flex flex-wrap gap-4 text-xs text-slate-500 mb-4">
+            <div className="flex flex-wrap gap-4 text-xs mb-4" style={{ color: 'var(--color-fog)' }}>
               <span className="flex items-center gap-1"><Clock size={12} /> {timeAgo(issue.reportedAt)}</span>
               <button 
                 onClick={handleUpvote}
                 disabled={isUpvoting}
-                className="flex items-center gap-1 hover:text-[#00D4AA] transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-slate-500"
+                className="flex items-center gap-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ color: 'var(--color-fog)' }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--color-plum)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--color-fog)'}
                 title={user && issue.upvotedBy?.includes(user.uid) ? "Remove upvote" : "Upvote"}
               >
-                {isUpvoting ? <Loader2 size={12} className="animate-spin" /> : <ThumbsUp size={12} className={user && issue.upvotedBy?.includes(user.uid) ? 'fill-current text-[#00D4AA]' : ''} />} 
+                {isUpvoting ? <Loader2 size={12} className="animate-spin" /> : <ThumbsUp size={12} className={user && issue.upvotedBy?.includes(user.uid) ? 'fill-current' : ''} style={{ color: user && issue.upvotedBy?.includes(user.uid) ? 'var(--color-plum)' : 'inherit' }} />} 
                 {issue.upvotes ?? 0} upvotes
               </button>
               {issue.severity && (
@@ -320,34 +327,34 @@ export default function IssueDetail() {
                 </span>
               )}
               {issue.aiAuthenticity && (
-                <span className="flex items-center gap-1 text-[#00D4AA]">
-                  <ShieldCheck size={12} /> AI Verified
-                </span>
-              )}
+              <span className="flex items-center gap-1" style={{ color: 'var(--color-signal-green)' }}>
+                <ShieldCheck size={12} /> AI Verified
+              </span>
+            )}
             </div>
 
             {issue.description && (
-              <p className="text-sm text-slate-300 leading-relaxed">{issue.description}</p>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--color-ink)' }}>{issue.description}</p>
             )}
 
             {issue.aiReasoning && (
-              <div className="mt-4 p-3 bg-[#00D4AA]/5 border border-[#00D4AA]/20 rounded-xl">
-                <p className="text-xs text-[#00D4AA] font-semibold mb-1">🤖 AI Analysis</p>
-                <p className="text-xs text-slate-400">{issue.aiReasoning}</p>
+              <div className="mt-4 p-3 rounded-xl" style={{ backgroundColor: 'rgba(62,122,84,0.05)', border: '1px solid rgba(62,122,84,0.15)' }}>
+                <p className="text-xs font-semibold mb-1" style={{ color: 'var(--color-signal-green)' }}>🤖 AI Analysis</p>
+                <p className="text-xs" style={{ color: 'var(--color-fog)' }}>{issue.aiReasoning}</p>
               </div>
             )}
 
             {issue.aiEscalationSummary && (
-              <div className="mt-3 p-3 bg-orange-400/5 border border-orange-400/20 rounded-xl">
-                <p className="text-xs text-orange-400 font-semibold mb-1">⚡ Escalation Summary</p>
-                <p className="text-xs text-slate-400">{issue.aiEscalationSummary}</p>
+              <div className="mt-3 p-3 rounded-xl" style={{ backgroundColor: 'rgba(198,125,45,0.05)', border: '1px solid rgba(198,125,45,0.15)' }}>
+                <p className="text-xs font-semibold mb-1" style={{ color: 'var(--color-signal-amber)' }}>⚡ Escalation Summary</p>
+                <p className="text-xs" style={{ color: 'var(--color-fog)' }}>{issue.aiEscalationSummary}</p>
               </div>
             )}
           </div>
 
           {/* ── Photo Comparison ─────────────────────────────────────────────── */}
-          <div className="glass-card p-5">
-            <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">
+          <div className="glass-card p-4 sm:p-6">
+            <h3 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--color-fog)' }}>
               {resolutionPreview ? 'Before / After Comparison' : 'Issue Photo'}
             </h3>
 
@@ -355,7 +362,7 @@ export default function IssueDetail() {
               {/* Before */}
               <div>
                 {resolutionPreview && (
-                  <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Before</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--color-fog)' }}>Before</p>
                 )}
                 {issue.photoUrl ? (
                   <img
@@ -364,7 +371,10 @@ export default function IssueDetail() {
                     className="w-full rounded-xl object-cover aspect-video border border-white/10"
                   />
                 ) : (
-                  <div className="w-full aspect-video rounded-xl bg-slate-800 flex items-center justify-center text-slate-600 text-sm">
+                  <div 
+                    className="w-full aspect-video rounded-xl flex items-center justify-center text-sm"
+                    style={{ backgroundColor: 'var(--color-stone-paper)', color: 'var(--color-fog)' }}
+                  >
                     No photo
                   </div>
                 )}
@@ -373,7 +383,7 @@ export default function IssueDetail() {
               {/* After (preview) */}
               {resolutionPreview && (
                 <div>
-                  <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">After (Preview)</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--color-fog)' }}>After (Preview)</p>
                   <img
                     src={resolutionPreview}
                     alt="Resolution photo preview"
@@ -385,7 +395,7 @@ export default function IssueDetail() {
               {/* Resolved photo from Firestore */}
               {isResolved && issue.resolvedPhotoUrl && !resolutionPreview && (
                 <div>
-                  <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Resolved</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--color-fog)' }}>Resolved</p>
                   <img
                     src={issue.resolvedPhotoUrl}
                     alt="Resolution photo"
@@ -401,14 +411,14 @@ export default function IssueDetail() {
                 <p className={`text-xs font-semibold mb-1 ${issue.aiResolutionVerified ? VERDICT_COLORS.success.text : VERDICT_COLORS.failure.text}`}>
                   {issue.aiResolutionVerified ? '✅ AI: Resolution Confirmed' : '❌ AI: Resolution Rejected'}
                 </p>
-                <p className="text-xs text-slate-400">{issue.aiResolutionExplanation}</p>
+                <p className="text-xs" style={{ color: 'var(--color-fog)' }}>{issue.aiResolutionExplanation}</p>
               </div>
             )}
           </div>
 
           {/* ── Verdict Banner ───────────────────────────────────────────────── */}
           {verdict && (
-            <div className={`glass-card p-5 border ${verdict.resolved ? `${VERDICT_COLORS.success.border} ${VERDICT_COLORS.success.bg}` : `${VERDICT_COLORS.failure.border} ${VERDICT_COLORS.failure.bg}`}`} style={{borderOpacity: 0.4}}>
+            <div className={`glass-card p-4 sm:p-6 border ${verdict.resolved ? `${VERDICT_COLORS.success.border} ${VERDICT_COLORS.success.bg}` : `${VERDICT_COLORS.failure.border} ${VERDICT_COLORS.failure.bg}`}`} style={{borderOpacity: 0.4}}>
               <div className="flex items-start gap-3">
                 {verdict.resolved
                   ? <ShieldCheck size={22} className={`${VERDICT_COLORS.success.text} shrink-0 mt-0.5`} />
@@ -418,9 +428,9 @@ export default function IssueDetail() {
                   <p className={`font-bold text-sm ${verdict.resolved ? VERDICT_COLORS.success.text : VERDICT_COLORS.failure.text}`}>
                     {verdict.resolved ? 'Resolution Confirmed by AI!' : 'AI Could Not Confirm Resolution'}
                   </p>
-                  <p className="text-xs text-slate-300 mt-1">{verdict.explanation}</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--color-ink)' }}>{verdict.explanation}</p>
                   {verdict.confidence != null && (
-                    <p className="text-xs text-slate-500 mt-1">Confidence: {Math.round(verdict.confidence * 100)}%</p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--color-fog)' }}>Confidence: {Math.round(verdict.confidence * 100)}%</p>
                   )}
                 </div>
               </div>
@@ -432,8 +442,8 @@ export default function IssueDetail() {
         <div className="space-y-5">
           {/* Admin Actions Panel */}
           {isAdmin && !isResolved && canMarkInProgress && (
-            <div className="glass-card p-5 border border-amber-500/20">
-              <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <div className="glass-card p-4 sm:p-5 border border-amber-500/20">
+              <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 flex items-center gap-2" style={{ color: 'var(--color-fog)' }}>
                 <Shield size={16} className="text-amber-500" /> Admin Actions
               </h3>
               <div className="space-y-3">
@@ -451,18 +461,19 @@ export default function IssueDetail() {
 
           {/* Community Resolution Panel */}
           {canMarkFixed && !isResolved && (
-            <div className="glass-card p-5">
-              <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <CheckCircle size={16} className="text-brand" /> Help Resolve
+            <div className="glass-card p-4 sm:p-5">
+              <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 flex items-center gap-2" style={{ color: 'var(--color-plum)' }}>
+                <CheckCircle size={16} /> Help Resolve
               </h3>
               <div className="space-y-3">
-                <p className="text-xs text-slate-400 mb-2">Upload a photo to let our AI Verifier close the ticket and award points.</p>
+                <p className="text-xs mb-2" style={{ color: 'var(--color-fog)' }}>Upload a photo to let our AI Verifier close the ticket and award points.</p>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-white/20 bg-white/5 text-slate-300 text-sm font-semibold hover:bg-white/10 transition-all"
+                  className="btn-secondary w-full"
+                  style={{ fontSize: '13px', padding: '10px 16px' }}
                 >
                   <Upload size={14} />
-                  {resolutionFile ? 'Change Resolution Photo' : 'Upload Resolution Photo'}
+                  {resolutionFile ? 'Change Photo' : 'Upload Photo'}
                 </button>
                 <input
                   ref={fileInputRef}
@@ -474,7 +485,7 @@ export default function IssueDetail() {
 
                 {resolutionFile && (
                   <div className="space-y-2">
-                    <p className="text-xs text-slate-500 truncate">📎 {resolutionFile.name}</p>
+                    <p className="text-xs truncate" style={{ color: 'var(--color-fog)' }}>📎 {resolutionFile.name}</p>
 
                     {/* Upload progress */}
                     {isVerifying && uploadProgress > 0 && uploadProgress < 100 && (
@@ -518,11 +529,11 @@ export default function IssueDetail() {
 
           {/* Resolved badge */}
           {isResolved && (
-            <div className="glass-card p-5 border border-green-400/30 bg-green-400/5 text-center">
+            <div className="glass-card p-4 sm:p-5 border border-green-400/30 bg-green-400/5 text-center">
               <CheckCircle size={32} className="text-green-400 mx-auto mb-2" />
               <p className="text-green-400 font-bold text-sm">Issue Resolved</p>
               {issue.resolvedAt && (
-                <p className="text-xs text-slate-500 mt-1">{formatTimestamp(issue.resolvedAt)}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--color-fog)' }}>{formatTimestamp(issue.resolvedAt)}</p>
               )}
             </div>
           )}
@@ -531,32 +542,32 @@ export default function IssueDetail() {
           <StatusTimeline statusHistory={issue.statusHistory} />
 
           {/* Metadata card */}
-          <div className="glass-card p-5">
-            <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">Details</h3>
+          <div className="glass-card p-4 sm:p-5">
+            <h3 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--color-fog)' }}>Details</h3>
             <div className="space-y-2.5 text-xs">
               <div className="flex justify-between">
-                <span className="text-slate-500">Category</span>
-                <span className="text-slate-300 capitalize">{issue.category?.replace('_', ' ') || '—'}</span>
+                <span style={{ color: 'var(--color-fog)' }}>Category</span>
+                <span className="capitalize" style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{issue.category?.replace('_', ' ') || '—'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Severity</span>
-                <span className="text-slate-300">{issue.severity ?? '—'} / 5</span>
+                <span style={{ color: 'var(--color-fog)' }}>Severity</span>
+                <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{issue.severity ?? '—'} / 5</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Reported</span>
-                <span className="text-slate-300">{formatTimestamp(issue.reportedAt) || '—'}</span>
+                <span style={{ color: 'var(--color-fog)' }}>Reported</span>
+                <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{formatTimestamp(issue.reportedAt) || '—'}</span>
               </div>
               {issue.location && (
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Coordinates</span>
-                  <span className="text-slate-300">
+                  <span style={{ color: 'var(--color-fog)' }}>Coordinates</span>
+                  <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>
                     {issue.location.lat?.toFixed(4)}, {issue.location.lng?.toFixed(4)}
                   </span>
                 </div>
               )}
               <div className="flex justify-between">
-                <span className="text-slate-500">AI Authentic</span>
-                <span className={issue.aiAuthenticity ? VERDICT_COLORS.success.text : VERDICT_COLORS.neutral.text}>
+                <span style={{ color: 'var(--color-fog)' }}>AI Authentic</span>
+                <span className={issue.aiAuthenticity ? VERDICT_COLORS.success.text : VERDICT_COLORS.neutral.text} style={{ fontWeight: 500 }}>
                   {issue.aiAuthenticity ? 'Yes' : 'No'}
                 </span>
               </div>

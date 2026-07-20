@@ -2,6 +2,7 @@ import express from 'express';
 import { db, FieldValue } from '../lib/firebase-admin.js';
 import * as geofire from 'geofire-common';
 import auth, { requireAdmin } from '../middleware/auth.js';
+import { verifyVerdict } from '../lib/token.js';
 
 const router = express.Router();
 
@@ -90,7 +91,8 @@ router.post('/', auth, async (req, res) => {
   try {
     const { 
       imageUrl, category, severity, title, description, 
-      location, isAuthentic, confidence, reasoning 
+      location, isAuthentic, confidence, reasoning,
+      verdictToken
     } = req.body;
 
     // userId comes from the verified Firebase token — not the request body
@@ -100,11 +102,32 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    // ── HARD GATE: Verify the signed AI verdict token ────────────────────────
+    // The client cannot forge isAuthentic because this token is HMAC-signed
+    // by the server at /api/analyze. No extra Gemini API call needed.
+    const verdict = verifyVerdict(verdictToken);
+
+    if (!verdict.valid) {
+      console.warn(`Verdict token rejected for user ${userId}: ${verdict.reason}`);
+      return res.status(403).json({
+        rejected: true,
+        reason: verdict.reason || 'Invalid or missing AI verification token.'
+      });
+    }
+
+    if (!verdict.data.isAuthentic) {
+      console.warn(`Inauthentic submission blocked for user ${userId}`);
+      return res.status(403).json({
+        rejected: true,
+        reason: 'Our AI could not identify a civic infrastructure issue in this photo.'
+      });
+    }
+
     // 1. Calculate Geohash
     const hash = geofire.geohashForLocation([location.lat, location.lng]);
 
-    // 2. Determine initial status based on Pipeline 1 AI Authenticity
-    const initialStatus = isAuthentic ? 'open' : 'unverified';
+    // 2. Token verified as authentic — set status to 'open'
+    const initialStatus = 'open';
 
     // 3. Prepare Issue Document
     const issueRef = db.collection('issues').doc();
