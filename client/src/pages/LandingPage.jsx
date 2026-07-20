@@ -253,9 +253,11 @@ export default function LandingPage({ onGetStarted }) {
       img.src = `/frames/frame_${String(i).padStart(2, '0')}.webp`;
     }
 
+    let isTouching = false;
+
     const animate = () => {
-      // Smooth lerp for buttery head rotation
-      currentFrame += (targetFrame - currentFrame) * 0.15;
+      // Smooth lerp for buttery head rotation, lowered to 0.08 for "heavier" gyro feel
+      currentFrame += (targetFrame - currentFrame) * 0.08;
       
       const frameIndex = Math.max(0, Math.min(TOTAL_FRAMES - 1, Math.round(currentFrame)));
       
@@ -273,6 +275,8 @@ export default function LandingPage({ onGetStarted }) {
     };
 
     // Mobile: touch tracking
+    const onTouchStart = () => { isTouching = true; };
+    const onTouchEnd = () => { isTouching = false; };
     const onTouchMove = (e) => {
       const ratio = e.touches[0].clientX / window.innerWidth;
       targetFrame = ratio * (TOTAL_FRAMES - 1);
@@ -280,21 +284,33 @@ export default function LandingPage({ onGetStarted }) {
 
     // Mobile: gyroscope/accelerometer
     const onDeviceOrientation = (e) => {
+      // Prioritize touch interaction over gyroscope micro-wobbles
+      if (isTouching) return;
+
       if (e.gamma !== null) {
-        // gamma is left/right tilt in degrees (-90 to 90)
-        const ratio = Math.max(0, Math.min(1, (e.gamma + 45) / 90));
-        targetFrame = ratio * (TOTAL_FRAMES - 1);
+        // Create a 5-degree deadzone perfectly centered forward
+        if (Math.abs(e.gamma) < 5) {
+          targetFrame = 14; 
+        } else {
+          // Widen mapping to 180-degree sweep (-90 to +90) for lower sensitivity
+          const ratio = Math.max(0, Math.min(1, (e.gamma + 90) / 180));
+          targetFrame = ratio * (TOTAL_FRAMES - 1);
+        }
       }
     };
 
     window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
     window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchend', onTouchEnd);
     window.addEventListener('deviceorientation', onDeviceOrientation);
 
     return () => {
       isCancelled = true;
       window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('touchstart', onTouchStart);
       window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
       window.removeEventListener('deviceorientation', onDeviceOrientation);
       if (frameId) cancelAnimationFrame(frameId);
     };
